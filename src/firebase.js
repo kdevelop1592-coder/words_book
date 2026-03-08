@@ -1,15 +1,15 @@
 import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signOut
 } from "firebase/auth";
-import { 
-  getFirestore, 
-  collection, 
-  addDoc, 
+import {
+  getFirestore,
+  collection,
+  addDoc,
   getDocs,
   query,
   where,
@@ -32,13 +32,16 @@ const firebaseConfig = {
 let app;
 try {
   app = initializeApp(firebaseConfig);
-} catch(e) {
+} catch (e) {
   console.warn("Firebase config is missing or invalid. Using dummy local testing setup.");
 }
 
 export const auth = app ? getAuth(app) : null;
 export const db = app ? getFirestore(app) : null;
 const provider = app ? new GoogleAuthProvider() : null;
+
+// 로컬 테스트용 메모리 DB
+const localWordsDB = [];
 
 // 로그인
 export const loginWithGoogle = async () => {
@@ -65,21 +68,34 @@ export const logout = async () => {
 export const observeAuth = (callback) => {
   if (!auth) {
     callback({ uid: 'local_user', displayName: '로컬 테스터' });
-    return () => {};
+    return () => { };
   }
   return onAuthStateChanged(auth, callback);
 };
 
 // 단어 Firestore에 저장
 export const saveWord = async (userId, wordData) => {
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
   if (!db) {
     console.log("로컬 DB 저장 시뮬레이션:", wordData);
+    localWordsDB.push({
+      id: Date.now().toString(),
+      userId: userId,
+      monthKey: monthKey,
+      word: wordData.word,
+      meanings: wordData.meanings,
+      phonetic: wordData.phonetic,
+      audioUrl: wordData.audioUrl,
+      createdAt: { seconds: Math.floor(now.getTime() / 1000) }
+    });
     return true;
   }
   try {
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    
+
     // Firestore words collection, document = auto ID
     await addDoc(collection(db, "words"), {
       userId: userId,
@@ -91,7 +107,7 @@ export const saveWord = async (userId, wordData) => {
       createdAt: serverTimestamp()
     });
     return true;
-  } catch(err) {
+  } catch (err) {
     console.error("Save Word Error:", err);
     throw err;
   }
@@ -99,29 +115,33 @@ export const saveWord = async (userId, wordData) => {
 
 // 단어 목록 가져오기
 export const getWordsByMonth = async (userId, monthKey) => {
-    if (!db) {
-      console.log("로컬 DB 조회 시뮬레이션"); return [];
-    }
-    
-    const wordsRef = collection(db, "words");
-    let q;
-    
+  if (!db) {
+    console.log("로컬 DB 조회 시뮬레이션");
     if (monthKey === 'all') {
-      q = query(wordsRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
-    } else {
-      q = query(wordsRef, where("userId", "==", userId), where("monthKey", "==", monthKey), orderBy("createdAt", "desc"));
+      return [...localWordsDB].reverse();
     }
-  
-    try {
-      const querySnapshot = await getDocs(q);
-      const words = [];
-      querySnapshot.forEach((doc) => {
-        words.push({ id: doc.id, ...doc.data() });
-      });
-      return words;
-    } catch(err) {
-      console.error("Get words error:", err);
-      // 복합 색인(composite index) 에러인 경우 콘솔에 URL이 출력됩니다.
-      throw err;
-    }
-  };
+    return localWordsDB.filter(w => w.monthKey === monthKey).reverse();
+  }
+
+  const wordsRef = collection(db, "words");
+  let q;
+
+  if (monthKey === 'all') {
+    q = query(wordsRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
+  } else {
+    q = query(wordsRef, where("userId", "==", userId), where("monthKey", "==", monthKey), orderBy("createdAt", "desc"));
+  }
+
+  try {
+    const querySnapshot = await getDocs(q);
+    const words = [];
+    querySnapshot.forEach((doc) => {
+      words.push({ id: doc.id, ...doc.data() });
+    });
+    return words;
+  } catch (err) {
+    console.error("Get words error:", err);
+    // 복합 색인(composite index) 에러인 경우 콘솔에 URL이 출력됩니다.
+    throw err;
+  }
+};
