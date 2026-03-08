@@ -179,44 +179,86 @@ body {
   transform: scale(1.1);
 }
 
+/* Nav Tabs */
+.nav-tabs {
+  display: flex;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 0.5rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.8rem;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5c6bc0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.tab-btn.active {
+  background: white;
+  color: #1a237e;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Tab Content */
+.tab-content {
+  display: none;
+  animation: fadeIn 0.4s ease forwards;
+}
+
 /* List Controls */
 .list-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
-  padding: 1.5rem;
+  padding: 1.2rem 2rem;
   margin-bottom: 2rem;
   align-items: center;
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .control-group {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  flex: 1;
-  min-width: 250px;
+  gap: 1rem;
 }
 
 .control-group label {
   font-weight: 600;
-  color: var(--primary-color);
+  color: #1a237e;
   white-space: nowrap;
+  font-size: 0.95rem;
 }
 
-.control-group input {
-  flex: 1;
-  padding: 0.8rem;
+.control-group input,
+.control-group select {
+  padding: 0.7rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(26, 35, 126, 0.1);
-  background: rgba(255, 255, 255, 0.8);
-  font-size: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
   outline: none;
   transition: all 0.2s ease;
+  color: #1a237e;
+  min-width: 200px;
 }
 
-.control-group input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.05);
+.control-group input:focus,
+.control-group select:focus {
+  border-color: #7C4DFF;
+  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.1);
 }
 
 .tab-content.active {

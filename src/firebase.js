@@ -17,7 +17,8 @@ import {
   query,
   where,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  deleteDoc
 } from "firebase/firestore";
 
 // TODO: Replace with your actual Firebase project config 
