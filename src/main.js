@@ -265,7 +265,15 @@ function renderFilteredWordList(searchTerm) {
     }
 
     wordListContainer.innerHTML = filteredWords.map(wordData => {
-        const meaningsHtml = wordData.meanings.map(m => `<li>${m}</li>`).join('');
+        const meaningsHtml = wordData.meanings.map(m => {
+            const parts = m.split('\n');
+            const main = parts[0];
+            const ex = parts.slice(1).join('<br>');
+            return `<li>
+                <div class="m-main">${main}</div>
+                ${ex ? `<div class="m-ex">${ex}</div>` : ''}
+            </li>`;
+        }).join('');
         return `
         <div class="word-card">
           <button class="delete-btn" data-id="${wordData.id}" title="삭제">×</button>
@@ -527,13 +535,23 @@ function clearPinInputs() {
     pinInputs[0].focus();
 }
 
-// PIN 입력 자동 포커스 이동
+// PIN 입력 자동 포커스 이동 및 1자 제한 강화
 pinInputs.forEach((input, index) => {
-    input.addEventListener('keyup', (e) => {
-        if (e.key >= 0 && e.key <= 9) {
+    // 1. 숫자 입력 시 즉시 다음 칸으로 이동 (input 이벤트가 keyup보다 빠름)
+    input.addEventListener('input', (e) => {
+        if (input.value.length > 0) {
+            // 한 칸에 여러 숫자가 들어가는 것 방지 (보험용)
+            if (input.value.length > 1) {
+                input.value = input.value.slice(-1);
+            }
             if (index < 3) pinInputs[index + 1].focus();
-        } else if (e.key === 'Backspace') {
-            if (index > 0) pinInputs[index - 1].focus();
+        }
+    });
+
+    // 2. 백스페이스 처리 (칸이 비어있을 때 뒤로 이동)
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && input.value === '' && index > 0) {
+            pinInputs[index - 1].focus();
         }
     });
 });

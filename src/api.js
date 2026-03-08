@@ -43,36 +43,30 @@ export const fetchWordData = async (word) => {
             interjection: "감탄사"
         };
 
-        // 단어 자체의 핵심 뜻 번역 (예: tree -> 나무)
-        let coreMeaning = "";
-        try {
-            const wordTransUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(result.word)}`;
-            const wordTransRes = await fetch(wordTransUrl);
-            const wordTransData = await wordTransRes.json();
-            coreMeaning = wordTransData[0][0][0];
-        } catch (e) {
-            console.warn("Core word translation failed", e);
-        }
-
         // 뜻(Meanings) 배열 추출 + 예문 포함
         const meanings = [];
         if (result.meanings && result.meanings.length > 0) {
             for (const m of result.meanings.slice(0, 3)) {
-                const pos = posMap[m.partOfSpeech] || m.partOfSpeech;
+                const posKey = m.partOfSpeech;
+                const pos = posMap[posKey] || posKey;
                 const def = m.definitions[0].definition;
                 const example = m.definitions[0].example || "";
 
-                let translatedDef = "";
+                let posCoreMeaning = "";
                 let translatedExample = "";
 
                 try {
-                    // 정의 번역 (필요한 경우 핵심 뜻으로 대체하거나 병행)
-                    const defTransUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(def)}`;
-                    const defRes = await fetch(defTransUrl);
-                    const defData = await defRes.json();
-                    translatedDef = defData[0][0][0];
+                    // 1. 해당 품사에 특화된 핵심 뜻 번역 시도
+                    // 팁: "word (pos)" 형태로 번역 요청하면 해당 품사의 대표 의미를 잘 가져옴
+                    const posTransUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(`${result.word} (${posKey})`)}`;
+                    const posRes = await fetch(posTransUrl);
+                    const posData = await posRes.json();
 
-                    // 예문 번역
+                    // "나무 (명사)" -> "나무" 만 추출하거나, 전체 사용
+                    let rawStr = posData[0][0][0];
+                    posCoreMeaning = rawStr.split('(')[0].trim();
+
+                    // 2. 예문 번역
                     if (example) {
                         const exTransUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(example)}`;
                         const exRes = await fetch(exTransUrl);
@@ -80,11 +74,11 @@ export const fetchWordData = async (word) => {
                         translatedExample = exData[0][0][0];
                     }
                 } catch (tErr) {
-                    translatedDef = def;
+                    console.warn("Translation failed for meaning item", tErr);
                 }
 
-                // 결과 구성: [품사] 핵심뜻 (정의 요약) + 예문
-                let finalMeaning = `[${pos}] ${coreMeaning || translatedDef}`;
+                // 결과 구성: [품사] 핵심뜻 (정의 풀이 제거) + 예문
+                let finalMeaning = `[${pos}] ${posCoreMeaning || def}`;
                 if (example) {
                     finalMeaning += `\n- ex: ${example}`;
                     if (translatedExample) finalMeaning += ` (${translatedExample})`;
