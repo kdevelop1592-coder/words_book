@@ -46,44 +46,69 @@ export const fetchWordData = async (word) => {
         // 뜻(Meanings) 배열 추출 + 예문 포함
         const meanings = [];
         if (result.meanings && result.meanings.length > 0) {
+            // 최대 3개의 품사(Meanings) 처리
             for (const m of result.meanings.slice(0, 3)) {
                 const posKey = m.partOfSpeech;
                 const pos = posMap[posKey] || posKey;
-                const def = m.definitions[0].definition;
-                const example = m.definitions[0].example || "";
 
-                let posCoreMeaning = "";
-                let translatedExample = "";
+                // 각 품사별로 최대 2개의 정의를 탐색하여 다양한 뜻 확보
+                for (const dObj of m.definitions.slice(0, 2)) {
+                    const def = dObj.definition;
+                    const example = dObj.example || "";
 
-                try {
-                    // 1. 해당 품사에 특화된 핵심 뜻 번역 시도
-                    // 팁: "word (pos)" 형태로 번역 요청하면 해당 품사의 대표 의미를 잘 가져옴
-                    const posTransUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(`${result.word} (${posKey})`)}`;
-                    const posRes = await fetch(posTransUrl);
-                    const posData = await posRes.json();
+                    let posCoreMeaning = "";
+                    let translatedExample = "";
 
-                    // "나무 (명사)" -> "나무" 만 추출하거나, 전체 사용
-                    let rawStr = posData[0][0][0];
-                    posCoreMeaning = rawStr.split('(')[0].trim();
+                    try {
+                        // 1. 정의를 컨텍스트로 사용하여 핵심 대응어 추출
+                        // "word (pos): definition" 형태로 질의하여 문맥 최적화
+                        const contextQuery = `${result.word} (${posKey}): ${def}`;
+                        const posTransUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(contextQuery)}`;
+                        const posRes = await fetch(posTransUrl);
+                        const posData = await posRes.json();
 
-                    // 2. 예문 번역
-                    if (example) {
-                        const exTransUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(example)}`;
-                        const exRes = await fetch(exTransUrl);
-                        const exData = await exRes.json();
-                        translatedExample = exData[0][0][0];
+                        const translatedFull = posData[0][0][0];
+
+                        // 파싱 전략: 콜론(:)이나 괄호(())를 기준으로 핵심어 추출 시도
+                        let candidate = translatedFull.split(':')[0].split('：')[0].split('(')[0].trim();
+
+                        // 만약 앞부분이 영어거나 너무 길면 한글만 찾아내기
+                        if (candidate.toLowerCase().includes(result.word.toLowerCase()) || candidate.length > 10) {
+                            const koMatch = translatedFull.match(/[가-힣]{2,10}/);
+                            candidate = koMatch ? koMatch[0] : candidate;
+                        }
+
+                        posCoreMeaning = candidate || def;
+
+                        // 2. 예문 번역
+                        if (example) {
+                            const exTransUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ko&dt=t&q=${encodeURIComponent(example)}`;
+                            const exRes = await fetch(exTransUrl);
+                            const exData = await exRes.json();
+                            translatedExample = exData[0][0][0];
+                        }
+                    } catch (tErr) {
+                        console.warn("Translation failed for definition", tErr);
                     }
-                } catch (tErr) {
-                    console.warn("Translation failed for meaning item", tErr);
-                }
 
-                // 결과 구성: [품사] 핵심뜻 (정의 풀이 제거) + 예문
-                let finalMeaning = `[${pos}] ${posCoreMeaning || def}`;
-                if (example) {
-                    finalMeaning += `\n- ex: ${example}`;
-                    if (translatedExample) finalMeaning += ` (${translatedExample})`;
+                    // 결과 구성: [품사] 핵심뜻 + 예문
+                    // 한글이 전혀 없으면 원문 사용
+                    let displayCore = posCoreMeaning;
+                    if (!/[가-힣]/.test(displayCore)) {
+                        displayCore = def;
+                    }
+
+                    let finalMeaning = `[${pos}] ${displayCore}`;
+                    if (example) {
+                        finalMeaning += `\n- ex: ${example}`;
+                        if (translatedExample) finalMeaning += ` (${translatedExample})`;
+                    }
+
+                    // 중복 및 너무 유사한 뜻 방지 (이미 포함된 핵심어면 건너뜀)
+                    if (!meanings.some(item => item.includes(displayCore))) {
+                        meanings.push(finalMeaning);
+                    }
                 }
-                meanings.push(finalMeaning);
             }
         }
 
