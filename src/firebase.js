@@ -104,8 +104,8 @@ export const saveUser = async (user) => {
 
 // 관리자 권한 확인
 export const isAdmin = (user) => {
-  if (!user) return false;
-  return user.email === 'kdevelop1592@gmail.com';
+  if (!user || !user.email) return false;
+  return user.email.toLowerCase() === 'kdevelop1592@gmail.com';
 };
 
 // 2차 비밀번호 저장

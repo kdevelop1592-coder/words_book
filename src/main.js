@@ -188,7 +188,16 @@ searchForm.addEventListener('submit', async (e) => {
 });
 
 function renderWordPreview(wordData) {
-    const meaningsHtml = wordData.meanings.map(m => `<li>${m}</li>`).join('');
+    const meaningsHtml = wordData.meanings.map(m => {
+        const parts = m.split('\n');
+        const main = parts[0];
+        const ex = parts.slice(1).join('<br>');
+        return `<li>
+            <div class="m-main">${main}</div>
+            ${ex ? `<div class="m-ex">${ex}</div>` : ''}
+        </li>`;
+    }).join('');
+
     const audioHtml = wordData.audioUrl ?
         `<button class="icon-btn" onclick="new Audio('${wordData.audioUrl}').play()" title="발음 듣기">🔊</button>` : '';
 
@@ -438,14 +447,18 @@ async function renderAdminDashboard() {
         const { users, quizResults } = await getAdminSummaries();
 
         // 1. 사용자 목록 렌더링
-        userStatsBody.innerHTML = users.map(user => `
-            <tr>
-                <td>${user.displayName || '이름 없음'}</td>
-                <td>${user.email}</td>
-                <td><span class="badge badge-count">${user.wordCount}개</span></td>
-                <td>${user.lastLogin ? new Date(user.lastLogin.seconds * 1000).toLocaleDateString() : '-'}</td>
-            </tr>
-        `).join('');
+        if (users.length === 0) {
+            userStatsBody.innerHTML = '<tr><td colspan="4">가입된 사용자가 없습니다.</td></tr>';
+        } else {
+            userStatsBody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.displayName || '이름 없음'}</td>
+                    <td>${user.email}</td>
+                    <td><span class="badge badge-count">${user.wordCount}개</span></td>
+                    <td>${user.lastLogin ? new Date(user.lastLogin.seconds * 1000).toLocaleDateString() : '-'}</td>
+                </tr>
+            `).join('');
+        }
 
         // 2. 오답 통계 계산
         const wrongWordMap = {};
