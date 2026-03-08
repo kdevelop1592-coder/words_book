@@ -1,5 +1,5 @@
 import { fetchWordData } from './api.js';
-import { auth, loginWithGoogle, logout, observeAuth, saveWord, getWordsByMonth, isAdmin, saveQuizResult, getAdminSummaries, getUserData, updateSecondaryPassword } from './firebase.js';
+import { auth, loginWithGoogle, logout, observeAuth, saveWord, getWordsByMonth, isAdmin, saveQuizResult, getAdminSummaries, getUserData, updateSecondaryPassword, deleteWord } from './firebase.js';
 import { WordQuiz } from './quiz.js';
 
 let currentUser = null;
@@ -21,6 +21,7 @@ const searchLoading = document.getElementById('search-loading');
 
 // --- Section 2: 리스트 ---
 const monthSelect = document.getElementById('month-select');
+const registeredSearchInput = document.getElementById('registered-search-input');
 const wordListContainer = document.getElementById('word-list-container');
 
 // --- Section 3: 퀴즈 ---
@@ -173,9 +174,12 @@ searchForm.addEventListener('submit', async (e) => {
         wordPreview.classList.remove('hidden');
 
         // 3. Firestore에 저장
-        await saveWord(currentUser.uid, wordData);
-
-        wordInput.value = "";
+        const result = await saveWord(currentUser.uid, wordData);
+        if (result === "already_exists") {
+            alert("이미 등록된 단어입니다. ✨");
+        } else {
+            wordInput.value = "";
+        }
     } catch (err) {
         alert(`검색 실패: ${err.message}`);
     } finally {
@@ -219,25 +223,43 @@ function populateMonthOptions() {
 
 monthSelect.addEventListener('change', (e) => loadWordList(e.target.value));
 
+registeredSearchInput.addEventListener('input', () => {
+    const searchTerm = registeredSearchInput.value.trim().toLowerCase();
+    renderFilteredWordList(searchTerm);
+});
+
 async function loadWordList(monthKey) {
     if (!currentUser) return;
 
     wordListContainer.innerHTML = '<p class="empty-state">로딩 중... ⏳</p>';
     try {
         const words = await getWordsByMonth(currentUser.uid, monthKey);
-        currentMonthWords = words; // 퀴즈용 복사본
+        currentMonthWords = words; // 퀴즈용 복사본 및 검색용 소스
 
-        if (words.length === 0) {
-            wordListContainer.innerHTML = '<p class="empty-state">등록된 단어가 없습니다. 검색 탭에서 추가해보세요!</p>';
-            return;
-        }
+        const searchTerm = registeredSearchInput.value.trim().toLowerCase();
+        renderFilteredWordList(searchTerm);
 
-        wordListContainer.innerHTML = words.map(wordData => {
-            const meaningsHtml = wordData.meanings.map(m => `<li>${m}</li>`).join('');
-            // onclick="new Audio(url).play()" 처리는 글로벌 스코프로 접근 가능해야 하므로 inline 적용
-            // 모듈이라 전역 함수로 작동 안할 것을 대비해 html 데이터 속성과 이벤트 위임 활용
-            return `
+    } catch (err) {
+        wordListContainer.innerHTML = `<p class="empty-state" style="color:red">불러오기 실패: ${err.message}</p>`;
+    }
+}
+
+function renderFilteredWordList(searchTerm) {
+    const filteredWords = currentMonthWords.filter(w =>
+        w.word.toLowerCase().includes(searchTerm) ||
+        w.meanings.some(m => m.toLowerCase().includes(searchTerm))
+    );
+
+    if (filteredWords.length === 0) {
+        wordListContainer.innerHTML = '<p class="empty-state">검색 결과가 없거나 등록된 단어가 없습니다. 🔍</p>';
+        return;
+    }
+
+    wordListContainer.innerHTML = filteredWords.map(wordData => {
+        const meaningsHtml = wordData.meanings.map(m => `<li>${m}</li>`).join('');
+        return `
         <div class="word-card">
+          <button class="delete-btn" data-id="${wordData.id}" title="삭제">×</button>
           <div class="word-header">
              <h3 class="word-title">${wordData.word} 
                 ${wordData.audioUrl ? `<button class="icon-btn play-audio-btn" data-url="${wordData.audioUrl}">🔊</button>` : ''}
@@ -248,20 +270,32 @@ async function loadWordList(monthKey) {
           <div class="word-meta">${new Date(wordData.createdAt?.seconds * 1000).toLocaleDateString() || '오늘'}</div>
         </div>
       `;
-        }).join('');
+    }).join('');
 
-        // 이벤트 위임으로 오디오 재생 붙이기
-        const audioBtns = wordListContainer.querySelectorAll('.play-audio-btn');
-        audioBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const url = e.currentTarget.getAttribute('data-url');
-                if (url) new Audio(url).play();
-            });
+    // 오디오 재생 버튼 이벤트
+    const audioBtns = wordListContainer.querySelectorAll('.play-audio-btn');
+    audioBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const url = e.currentTarget.getAttribute('data-url');
+            if (url) new Audio(url).play();
         });
+    });
 
-    } catch (err) {
-        wordListContainer.innerHTML = `<p class="empty-state" style="color:red">불러오기 실패: ${err.message}</p>`;
-    }
+    // 삭제 버튼 이벤트
+    const deleteBtns = wordListContainer.querySelectorAll('.delete-btn');
+    deleteBtns.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            if (confirm("정말로 이 단어를 삭제하시겠습니까?")) {
+                try {
+                    await deleteWord(id);
+                    await loadWordList(monthSelect.value);
+                } catch (err) {
+                    alert("삭제 중 오류가 발생했습니다.");
+                }
+            }
+        });
+    });
 }
 
 // -----------------------------------------------------

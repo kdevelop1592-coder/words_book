@@ -152,6 +152,13 @@ export const saveWord = async (userId, wordData) => {
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
+    // 중복 체크
+    const q = query(collection(db, "words"), where("userId", "==", userId), where("word", "==", wordData.word));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      return "already_exists";
+    }
+
     // Firestore words collection, document = auto ID
     await addDoc(collection(db, "words"), {
       userId: userId,
@@ -198,6 +205,19 @@ export const getWordsByMonth = async (userId, monthKey) => {
   } catch (err) {
     console.error("Get words error:", err);
     // 복합 색인(composite index) 에러인 경우 콘솔에 URL이 출력됩니다.
+    throw err;
+  }
+};
+
+// 단어 삭제
+export const deleteWord = async (wordId) => {
+  if (!db) return;
+  try {
+    const wordRef = doc(db, "words", wordId);
+    await deleteDoc(wordRef);
+    return true;
+  } catch (err) {
+    console.error("Delete Word Error:", err);
     throw err;
   }
 };

@@ -179,38 +179,44 @@ body {
   transform: scale(1.1);
 }
 
-/* Nav Tabs */
-.nav-tabs {
+/* List Controls */
+.list-controls {
   display: flex;
-  gap: 1rem;
-  background: rgba(255, 255, 255, 0.3);
-  padding: 0.5rem;
-  border-radius: 16px;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  align-items: center;
 }
 
-.tab-btn {
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex: 1;
+  min-width: 250px;
+}
+
+.control-group label {
+  font-weight: 600;
+  color: var(--primary-color);
+  white-space: nowrap;
+}
+
+.control-group input {
   flex: 1;
   padding: 0.8rem;
-  border: none;
-  background: transparent;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #5c6bc0;
   border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  border: 1px solid rgba(26, 35, 126, 0.1);
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
 }
 
-.tab-btn.active {
-  background: white;
-  color: #1a237e;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-
-/* Tab Content */
-.tab-content {
-  display: none;
-  animation: fadeIn 0.4s ease forwards;
+.control-group input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.05);
 }
 
 .tab-content.active {
@@ -267,6 +273,7 @@ body {
 
 /* Word Card (Preview & List Item) */
 .word-card {
+  position: relative;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 16px;
   padding: 1.5rem;
@@ -276,6 +283,36 @@ body {
   gap: 0.5rem;
   transition: transform 0.2s;
   border-left: 5px solid #FF4081;
+}
+
+.delete-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.2;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.word-card:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  background: #f44336;
+  color: white;
+  transform: scale(1.1);
 }
 
 .word-card:hover {
