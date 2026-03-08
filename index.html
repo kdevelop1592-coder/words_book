@@ -1,127 +1,201 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Words Book - 내 손안의 영어 단어장</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/style.css">
-  </head>
-  <body>
-    <!-- Background Elements -->
-    <div class="background-shape shape-1"></div>
-    <div class="background-shape shape-2"></div>
-    <div class="background-shape shape-3"></div>
 
-    <div id="app" class="glass-container">
-      
-      <!-- 헤더 -->
-      <header class="header">
-        <div class="logo">
-          <h1>Words Book 📚</h1>
-          <p>중학생 영단어 마스터</p>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Words Book - 내 손안의 영어 단어장</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <!-- Background Elements -->
+  <div class="background-shape shape-1"></div>
+  <div class="background-shape shape-2"></div>
+  <div class="background-shape shape-3"></div>
+
+  <div id="app" class="glass-container">
+
+    <!-- 헤더 -->
+    <header class="header">
+      <div class="logo">
+        <h1>Words Book 📚</h1>
+        <p>중학생 영단어 마스터</p>
+      </div>
+      <div class="auth-section" id="auth-section">
+        <!-- Auth buttons will be injected here -->
+        <button id="login-btn" class="btn btn-primary">구글 로그인</button>
+      </div>
+    </header>
+
+    <!-- 내비게이션 탭 -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-target="add-section">단어 검색/등록</button>
+      <button class="tab-btn" data-target="list-section">내 단어장</button>
+      <button class="tab-btn" data-target="quiz-section">단어 퀴즈</button>
+      <button class="tab-btn hidden" id="admin-tab-btn" data-target="admin-section">관리자</button>
+    </nav>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <main class="main-content">
+
+      <!-- 1. 단어 검색 및 등록 섹션 -->
+      <section id="add-section" class="tab-content active">
+        <div class="search-box">
+          <h2>새로운 단어 검색하기 🔍</h2>
+          <form id="search-form">
+            <input type="text" id="word-input" placeholder="모르는 영어 단어를 입력하세요 (예: apple)" required autocomplete="off">
+            <button type="submit" class="btn btn-secondary">검색 & 등록</button>
+          </form>
+          <div id="search-loading" class="hidden">로딩 중... ⏳</div>
         </div>
-        <div class="auth-section" id="auth-section">
-          <!-- Auth buttons will be injected here -->
-          <button id="login-btn" class="btn btn-primary">구글 로그인</button>
+
+        <!-- 최근 추가한 단어/결과 프리뷰 -->
+        <div id="latest-word-preview" class="word-card hidden">
+          <!-- 렌더링될 곳 -->
         </div>
-      </header>
-      
-      <!-- 내비게이션 탭 -->
-      <nav class="nav-tabs">
-        <button class="tab-btn active" data-target="add-section">단어 검색/등록</button>
-        <button class="tab-btn" data-target="list-section">내 단어장</button>
-        <button class="tab-btn" data-target="quiz-section">단어 퀴즈</button>
-      </nav>
+      </section>
 
-      <!-- 메인 콘텐츠 영역 -->
-      <main class="main-content">
-        
-        <!-- 1. 단어 검색 및 등록 섹션 -->
-        <section id="add-section" class="tab-content active">
-          <div class="search-box">
-            <h2>새로운 단어 검색하기 🔍</h2>
-            <form id="search-form">
-              <input type="text" id="word-input" placeholder="모르는 영어 단어를 입력하세요 (예: apple)" required autocomplete="off">
-              <button type="submit" class="btn btn-secondary">검색 & 등록</button>
-            </form>
-            <div id="search-loading" class="hidden">로딩 중... ⏳</div>
+      <!-- 2. 내 단어장 및 월별 리스트 섹션 -->
+      <section id="list-section" class="tab-content hidden">
+        <div class="list-header">
+          <h2>내 단어장 📖</h2>
+          <div class="month-filter">
+            <label for="month-select">월별 보기:</label>
+            <select id="month-select">
+              <option value="all">전체보기</option>
+              <!-- JS에서 현재 가입후 등록월 옵션 동적 추가 -->
+              <option value="2023-10">2023년 10월</option>
+            </select>
           </div>
-          
-          <!-- 최근 추가한 단어/결과 프리뷰 -->
-          <div id="latest-word-preview" class="word-card hidden">
-            <!-- 렌더링될 곳 -->
+        </div>
+
+        <div id="word-list-container" class="word-list">
+          <!-- 단어 리스트 아이템들이 렌더링될 곳 -->
+          <p class="empty-state">아직 등록된 단어가 없습니다. 단어를 검색해서 등록해보세요!</p>
+        </div>
+      </section>
+
+      <!-- 3. 월별 5지선다 퀴즈 섹션 -->
+      <section id="quiz-section" class="tab-content hidden">
+        <div class="quiz-setup" id="quiz-setup">
+          <h2>단어 맞추기 퀴즈 🎯</h2>
+          <p>월별로 저장한 단어들을 테스트해 보세요!</p>
+          <div class="form-group">
+            <label for="quiz-month-select">퀴즈 풀 월 선택:</label>
+            <select id="quiz-month-select">
+              <!-- JS 동적 추가 -->
+            </select>
+          </div>
+          <button id="start-quiz-btn" class="btn btn-primary large-btn">퀴즈 시작하기</button>
+          <p id="quiz-warning" class="warning-text hidden">해당 월에 등록된 단어가 5개 이상이어야 퀴즈를 풀 수 있습니다.</p>
+        </div>
+
+        <!-- 퀴즈 플레이 화면 -->
+        <div class="quiz-play hidden" id="quiz-play">
+          <div class="quiz-progress">
+            <span id="quiz-current-num">1</span> / <span id="quiz-total-num">10</span>
+          </div>
+          <div class="quiz-question">
+            <h3 id="quiz-word">Apple</h3>
+            <button id="quiz-audio-btn" class="icon-btn" title="발음 듣기">🔊</button>
+          </div>
+          <div class="quiz-options" id="quiz-options">
+            <!-- 선택지 5개 렌더링 -->
+          </div>
+          <div id="quiz-feedback" class="quiz-feedback hidden"></div>
+          <button id="next-quiz-btn" class="btn btn-secondary hidden">다음 문제 ➡️</button>
+        </div>
+
+        <!-- 퀴즈 결과 화면 -->
+        <div class="quiz-result hidden" id="quiz-result">
+          <h2>퀴즈 완료! 🎉</h2>
+          <div class="score-display">
+            <span id="final-score">8</span> / <span id="total-questions">10</span>
+          </div>
+          <p id="result-message">참 잘했어요!</p>
+          <button id="retry-quiz-btn" class="btn btn-primary">다시 풀기</button>
+        </div>
+
+        <!-- 4. 관리자 대시보드 섹션 -->
+        <section id="admin-section" class="tab-content hidden">
+          <div class="admin-header">
+            <h2>관리자 대시보드 👨‍🏫</h2>
+            <button id="refresh-admin-btn" class="btn btn-secondary btn-sm">데이터 새로고침</button>
+          </div>
+
+          <div class="admin-grid">
+            <!-- 사용자 통계 카드 -->
+            <div class="admin-card">
+              <h3>사용자 현황 👥</h3>
+              <div class="table-container">
+                <table id="user-stats-table">
+                  <thead>
+                    <tr>
+                      <th>이름</th>
+                      <th>이메일</th>
+                      <th>단어 수</th>
+                      <th>최근 접속</th>
+                    </tr>
+                  </thead>
+                  <tbody id="user-stats-body">
+                    <!-- 로딩 중... -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 오답률 통계 카드 -->
+            <div class="admin-card">
+              <h3>학습 분석 (오답률 높은 단어) ⚠️</h3>
+              <div class="table-container">
+                <table id="wrong-word-table">
+                  <thead>
+                    <tr>
+                      <th>단어</th>
+                      <th>오답 횟수</th>
+                      <th>주요 오답 이유</th>
+                    </tr>
+                  </thead>
+                  <tbody id="wrong-word-body">
+                    <!-- 로딩 중... -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </section>
+    </main>
 
-        <!-- 2. 내 단어장 및 월별 리스트 섹션 -->
-        <section id="list-section" class="tab-content hidden">
-          <div class="list-header">
-            <h2>내 단어장 📖</h2>
-            <div class="month-filter">
-              <label for="month-select">월별 보기:</label>
-              <select id="month-select">
-                <option value="all">전체보기</option>
-                <!-- JS에서 현재 가입후 등록월 옵션 동적 추가 -->
-                <option value="2023-10">2023년 10월</option>
-              </select>
-            </div>
-          </div>
-          
-          <div id="word-list-container" class="word-list">
-            <!-- 단어 리스트 아이템들이 렌더링될 곳 -->
-            <p class="empty-state">아직 등록된 단어가 없습니다. 단어를 검색해서 등록해보세요!</p>
-          </div>
-        </section>
+  </div>
+  <!-- Security Overlay (Secondary Password) -->
+  <div id="security-overlay" class="security-overlay hidden">
+    <div class="security-card glass-container">
+      <h2 id="security-title">2차 비밀번호 확인 🔒</h2>
+      <p id="security-desc">공용 컴퓨터 보호를 위해 비밀번호를 입력해주세요.</p>
 
-        <!-- 3. 월별 5지선다 퀴즈 섹션 -->
-        <section id="quiz-section" class="tab-content hidden">
-          <div class="quiz-setup" id="quiz-setup">
-            <h2>단어 맞추기 퀴즈 🎯</h2>
-            <p>월별로 저장한 단어들을 테스트해 보세요!</p>
-            <div class="form-group">
-               <label for="quiz-month-select">퀴즈 풀 월 선택:</label>
-               <select id="quiz-month-select">
-                 <!-- JS 동적 추가 -->
-               </select>
-            </div>
-            <button id="start-quiz-btn" class="btn btn-primary large-btn">퀴즈 시작하기</button>
-            <p id="quiz-warning" class="warning-text hidden">해당 월에 등록된 단어가 5개 이상이어야 퀴즈를 풀 수 있습니다.</p>
-          </div>
+      <div class="pin-input-group">
+        <input type="password" maxlength="4" class="pin-input" id="pin-input-1" autocomplete="off" inputmode="numeric">
+        <input type="password" maxlength="4" class="pin-input" id="pin-input-2" autocomplete="off" inputmode="numeric">
+        <input type="password" maxlength="4" class="pin-input" id="pin-input-3" autocomplete="off" inputmode="numeric">
+        <input type="password" maxlength="4" class="pin-input" id="pin-input-4" autocomplete="off" inputmode="numeric">
+      </div>
 
-          <!-- 퀴즈 플레이 화면 -->
-          <div class="quiz-play hidden" id="quiz-play">
-            <div class="quiz-progress">
-              <span id="quiz-current-num">1</span> / <span id="quiz-total-num">10</span>
-            </div>
-            <div class="quiz-question">
-              <h3 id="quiz-word">Apple</h3>
-              <button id="quiz-audio-btn" class="icon-btn" title="발음 듣기">🔊</button>
-            </div>
-            <div class="quiz-options" id="quiz-options">
-              <!-- 선택지 5개 렌더링 -->
-            </div>
-            <div id="quiz-feedback" class="quiz-feedback hidden"></div>
-            <button id="next-quiz-btn" class="btn btn-secondary hidden">다음 문제 ➡️</button>
-          </div>
+      <div id="security-error" class="hidden error-text">비밀번호가 올바르지 않습니다.</div>
 
-          <!-- 퀴즈 결과 화면 -->
-          <div class="quiz-result hidden" id="quiz-result">
-            <h2>퀴즈 완료! 🎉</h2>
-            <div class="score-display">
-              <span id="final-score">8</span> / <span id="total-questions">10</span>
-            </div>
-            <p id="result-message">참 잘했어요!</p>
-            <button id="retry-quiz-btn" class="btn btn-primary">다시 풀기</button>
-          </div>
-
-        </section>
-      </main>
-
+      <div class="security-footer">
+        <button id="security-confirm-btn" class="btn btn-primary">확인</button>
+        <button id="security-logout-btn" class="btn btn-secondary">로그아웃</button>
+      </div>
     </div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
 </html>

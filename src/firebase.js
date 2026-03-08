@@ -11,6 +11,9 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
+  setDoc,
+  doc,
   query,
   where,
   orderBy,
@@ -20,12 +23,12 @@ import {
 // TODO: Replace with your actual Firebase project config 
 // Users should provide their own firebase config in environment variables or hardcode for local testing
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDKRIfgYXkoxD8xZhfD1QzkLoIHGk-vNL8",
+  authDomain: "words-book-cc9c3.firebaseapp.com",
+  projectId: "words-book-cc9c3",
+  storageBucket: "words-book-cc9c3.firebasestorage.app",
+  messagingSenderId: "380718132972",
+  appId: "1:380718132972:web:aff367a26006fcff6cbfc9"
 };
 
 // 백엔드 프로젝트 연동 대비 빈 콘솔 대체 가능
@@ -47,9 +50,11 @@ const localWordsDB = [];
 export const loginWithGoogle = async () => {
   if (!auth) {
     alert("Firebase가 설정되지 않았습니다. 현재는 로컬 모드(기능 제한)로 테스트 중입니다.");
-    return { uid: 'local_user', displayName: '로컬 테스터' };
+    return { uid: 'local_user', displayName: '로컬 테스터', email: 'local@example.com' };
   }
   try {
+    // 공용 컴퓨터 보안: 매번 계정 선택 창을 띄움
+    provider.setCustomParameters({ prompt: 'select_account' });
     const result = await signInWithPopup(auth, provider);
     return result.user;
   } catch (error) {
@@ -67,10 +72,61 @@ export const logout = async () => {
 // 상태 감지
 export const observeAuth = (callback) => {
   if (!auth) {
-    callback({ uid: 'local_user', displayName: '로컬 테스터' });
+    const localUser = { uid: 'local_user', displayName: '로컬 테스터', email: 'local@example.com' };
+    saveUser(localUser);
+    callback(localUser);
     return () => { };
   }
-  return onAuthStateChanged(auth, callback);
+  return onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      await saveUser(user);
+    }
+    callback(user);
+  });
+};
+
+// 사용자 정보 저장
+export const saveUser = async (user) => {
+  if (!db) return;
+  try {
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(userRef, {
+      uid: user.uid,
+      displayName: user.displayName,
+      email: user.email,
+      lastLogin: serverTimestamp()
+    }, { merge: true });
+  } catch (err) {
+    console.error("Save User Error:", err);
+  }
+};
+
+// 관리자 권한 확인
+export const isAdmin = (user) => {
+  if (!user) return false;
+  return user.email === 'kdevelop1592@gmail.com';
+};
+
+// 2차 비밀번호 저장
+export const updateSecondaryPassword = async (userId, password) => {
+  if (!db) return;
+  try {
+    const userRef = doc(db, "users", userId);
+    await setDoc(userRef, {
+      secondaryPassword: password // 실제 운영시에는 해싱 권장
+    }, { merge: true });
+  } catch (err) {
+    console.error("Update Password Error:", err);
+    throw err;
+  }
+};
+
+// 사용자 데이터 가져오기 (비밀번호 포함)
+export const getUserData = async (userId) => {
+  if (!db) return null;
+  const userRef = doc(db, "users", userId);
+  const snap = await getDoc(userRef);
+  return snap.exists() ? snap.data() : null;
 };
 
 // 단어 Firestore에 저장
@@ -142,6 +198,52 @@ export const getWordsByMonth = async (userId, monthKey) => {
   } catch (err) {
     console.error("Get words error:", err);
     // 복합 색인(composite index) 에러인 경우 콘솔에 URL이 출력됩니다.
+    throw err;
+  }
+};
+
+// 퀴즈 결과 저장
+export const saveQuizResult = async (userId, resultData) => {
+  if (!db) return;
+  try {
+    await addDoc(collection(db, "quiz_results"), {
+      userId,
+      ...resultData,
+      createdAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.error("Save Quiz Result Error:", err);
+    throw err;
+  }
+};
+
+// 관리자 통계 데이터 조회 (사용자 목록 + 단어 수 + 퀴즈 요약)
+export const getAdminSummaries = async () => {
+  if (!db) return { users: [], quizStats: [] };
+
+  try {
+    // 1. 모든 사용자 가져오기
+    const usersSnap = await getDocs(collection(db, "users"));
+    const users = [];
+
+    // 2. 각 사용자별 단어 수 집계
+    for (const userDoc of usersSnap.docs) {
+      const userData = userDoc.data();
+      const wordsQuery = query(collection(db, "words"), where("userId", "==", userData.uid));
+      const wordsSnap = await getDocs(wordsQuery);
+      users.push({
+        ...userData,
+        wordCount: wordsSnap.size
+      });
+    }
+
+    // 3. 퀴즈 결과 가져오기 (전체 오답 통계용)
+    const resultsSnap = await getDocs(collection(db, "quiz_results"));
+    const quizResults = resultsSnap.docs.map(doc => doc.data());
+
+    return { users, quizResults };
+  } catch (err) {
+    console.error("Get Admin Summaries Error:", err);
     throw err;
   }
 };

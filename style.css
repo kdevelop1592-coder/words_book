@@ -7,7 +7,8 @@
 
 body {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: #fce4ec; /* Light pink background */
+  background-color: #fce4ec;
+  /* Light pink background */
   color: #333;
   line-height: 1.6;
   min-height: 100vh;
@@ -55,13 +56,25 @@ body {
 }
 
 @keyframes float {
-  0% { transform: translate(0, 0) rotate(0deg); }
-  100% { transform: translate(50px, 50px) rotate(10deg); }
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(50px, 50px) rotate(10deg);
+  }
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.2); opacity: 0.9; }
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: scale(1.2);
+    opacity: 0.9;
+  }
 }
 
 /* Glass Container */
@@ -86,8 +99,9 @@ body {
 .glass-container::-webkit-scrollbar {
   width: 8px;
 }
+
 .glass-container::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 4px;
 }
 
@@ -104,7 +118,7 @@ body {
   font-size: 2rem;
   font-weight: 700;
   color: #1a237e;
-  text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
 }
 
 .logo p {
@@ -160,6 +174,7 @@ body {
   cursor: pointer;
   transition: transform 0.2s;
 }
+
 .icon-btn:hover {
   transform: scale(1.1);
 }
@@ -168,7 +183,7 @@ body {
 .nav-tabs {
   display: flex;
   gap: 1rem;
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
   padding: 0.5rem;
   border-radius: 16px;
 }
@@ -189,7 +204,7 @@ body {
 .tab-btn.active {
   background: white;
   color: #1a237e;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 /* Tab Content */
@@ -205,8 +220,15 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Search Section */
@@ -215,7 +237,7 @@ body {
   padding: 2rem;
   border-radius: 16px;
   text-align: center;
-  box-shadow: inset 0 2px 4px rgba(255,255,255,0.7);
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.7);
 }
 
 .search-box h2 {
@@ -231,9 +253,9 @@ body {
 #word-input {
   flex: 1;
   padding: 1rem;
-  border: 2px solid rgba(255,255,255,0.8);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: 12px;
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
   font-size: 1.1rem;
   outline: none;
   transition: border-color 0.3s;
@@ -248,7 +270,7 @@ body {
   background: rgba(255, 255, 255, 0.8);
   border-radius: 16px;
   padding: 1.5rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -303,20 +325,110 @@ body {
 }
 
 /* Utilities */
+/* Admin Dashboard Styles */
 .hidden {
   display: none !important;
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .admin-grid {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+}
+
+.admin-card {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+}
+
+.admin-card h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  border-bottom: 2px solid rgba(26, 35, 126, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(26, 35, 126, 0.05);
+}
+
+th {
+  font-weight: 600;
+  color: var(--secondary-color);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+td {
+  font-size: 0.95rem;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-count {
+  background: rgba(26, 35, 126, 0.1);
+  color: var(--primary-color);
 }
 
 /* Quiz Section Updates */
 .quiz-setup {
   text-align: center;
-  background: rgba(255,255,255,0.6);
+  background: rgba(255, 255, 255, 0.6);
   padding: 2rem;
   border-radius: 16px;
 }
+
 .form-group {
   margin: 1.5rem 0;
 }
+
 select {
   padding: 0.8rem;
   border-radius: 8px;
@@ -324,33 +436,39 @@ select {
   font-size: 1rem;
   outline: none;
 }
+
 .large-btn {
   font-size: 1.2rem;
   padding: 1rem 2rem;
 }
+
 .quiz-play {
-  background: rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 16px;
   padding: 2rem;
   text-align: center;
 }
+
 .quiz-progress {
   font-size: 1.2rem;
   font-weight: 600;
   color: #5c6bc0;
   margin-bottom: 1rem;
 }
+
 .quiz-question h3 {
   font-size: 3rem;
   color: #1a237e;
   margin-bottom: 2rem;
   display: inline-block;
 }
+
 .quiz-options {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
+
 .option-btn {
   padding: 1rem;
   border: 2px solid rgba(124, 77, 255, 0.3);
@@ -360,15 +478,18 @@ select {
   cursor: pointer;
   transition: all 0.2s;
 }
+
 .option-btn:hover {
   background: rgba(124, 77, 255, 0.1);
   border-color: #7C4DFF;
 }
+
 .option-btn.correct {
   background: #4CAF50;
   color: white;
   border-color: #4CAF50;
 }
+
 .option-btn.wrong {
   background: #F44336;
   color: white;
@@ -380,23 +501,137 @@ select {
   font-size: 1.2rem;
   font-weight: bold;
 }
-.quiz-feedback.correct-text { color: #4CAF50; }
-.quiz-feedback.wrong-text { color: #F44336; }
+
+.quiz-feedback.correct-text {
+  color: #4CAF50;
+}
+
+.quiz-feedback.wrong-text {
+  color: #F44336;
+}
 
 .quiz-result {
   text-align: center;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.8);
   padding: 3rem;
   border-radius: 16px;
 }
+
 .score-display {
   font-size: 4rem;
   font-weight: bold;
   color: #FF4081;
   margin: 1rem 0;
 }
+
 .warning-text {
   color: #E91E63;
   margin-top: 1rem;
   font-size: 0.9rem;
+}
+
+/* Security Overlay */
+.security-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(26, 35, 126, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.security-card {
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  padding: 3rem 2rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+}
+
+.security-card h2 {
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+}
+
+.security-card p {
+  font-size: 0.9rem;
+  color: #5c6bc0;
+  margin-bottom: 2rem;
+}
+
+.pin-input-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.pin-input {
+  width: 3.5rem;
+  height: 4.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(26, 35, 126, 0.2);
+  border-radius: 1rem;
+  font-size: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  color: var(--primary-color);
+}
+
+.pin-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: white;
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(26, 35, 126, 0.1);
+}
+
+.security-footer {
+  display: flex;
+  gap: 1rem;
+}
+
+.security-footer .btn {
+  flex: 1;
+}
+
+.error-text {
+  color: #c62828;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-10px);
+  }
+
+  50% {
+    transform: translateX(10px);
+  }
+
+  75% {
+    transform: translateX(-10px);
+  }
 }

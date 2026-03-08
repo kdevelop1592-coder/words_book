@@ -1,5 +1,5 @@
 import { fetchWordData } from './api.js';
-import { auth, loginWithGoogle, logout, observeAuth, saveWord, getWordsByMonth } from './firebase.js';
+import { auth, loginWithGoogle, logout, observeAuth, saveWord, getWordsByMonth, isAdmin, saveQuizResult, getAdminSummaries, getUserData, updateSecondaryPassword } from './firebase.js';
 import { WordQuiz } from './quiz.js';
 
 let currentUser = null;
@@ -44,6 +44,30 @@ const finalScoreEl = document.getElementById('final-score');
 const totalQuestionsEl = document.getElementById('total-questions');
 const retryQuizBtn = document.getElementById('retry-quiz-btn');
 
+// --- Section 4: 관리자 ---
+const adminTabBtn = document.getElementById('admin-tab-btn');
+const userStatsBody = document.getElementById('user-stats-body');
+const wrongWordBody = document.getElementById('wrong-word-body');
+const refreshAdminBtn = document.getElementById('refresh-admin-btn');
+
+// --- Security ---
+const securityOverlay = document.getElementById('security-overlay');
+const securityTitle = document.getElementById('security-title');
+const securityDesc = document.getElementById('security-desc');
+const securityError = document.getElementById('security-error');
+const pinInputs = [
+    document.getElementById('pin-input-1'),
+    document.getElementById('pin-input-2'),
+    document.getElementById('pin-input-3'),
+    document.getElementById('pin-input-4')
+];
+const securityConfirmBtn = document.getElementById('security-confirm-btn');
+const securityLogoutBtn = document.getElementById('security-logout-btn');
+
+let isVerified = false;
+let storedPassword = null;
+let isSettingUp = false;
+
 let currentQuizAudioUrl = "";
 
 // -----------------------------------------------------
@@ -64,6 +88,16 @@ observeAuth((user) => {
         // 로그인 후 월별 목록 세팅
         populateMonthOptions();
         loadWordList('all');
+
+        // 관리자 여부 확인 후 탭 노출
+        if (isAdmin(user)) {
+            adminTabBtn.classList.remove('hidden');
+        } else {
+            adminTabBtn.classList.add('hidden');
+        }
+
+        // 2차 비밀번호 확인 시작
+        initSecurityFlow(user);
     } else {
         authSection.innerHTML = `<button id="login-btn" class="btn btn-primary">구글 로그인</button>`;
         document.getElementById('login-btn').addEventListener('click', async () => {
@@ -89,12 +123,17 @@ tabBtns.forEach(btn => {
 
         // 컨텐츠 활성화 토글
         const targetId = btn.getAttribute('data-target');
-        document.querySelector('.tab-content.active').classList.remove('active');
-        document.querySelector('.tab-content.active').classList.add('hidden');
+        const activeTabContent = document.querySelector('.tab-content.active');
+        if (activeTabContent) {
+            activeTabContent.classList.remove('active');
+            activeTabContent.classList.add('hidden');
+        }
 
         const targetSection = document.getElementById(targetId);
-        targetSection.classList.remove('hidden');
-        targetSection.classList.add('active');
+        if (targetSection) {
+            targetSection.classList.remove('hidden');
+            targetSection.classList.add('active');
+        }
 
         // 탭 전환 시 데이터 다시 로드
         if (targetId === 'list-section') {
@@ -102,6 +141,9 @@ tabBtns.forEach(btn => {
         }
         if (targetId === 'quiz-section') {
             resetQuizView();
+        }
+        if (targetId === 'admin-section') {
+            renderAdminDashboard();
         }
     });
 });
@@ -338,4 +380,149 @@ function showQuizResult() {
     else if (acc >= 0.7) document.getElementById('result-message').textContent = messages[2];
     else if (acc >= 0.4) document.getElementById('result-message').textContent = messages[1];
     else document.getElementById('result-message').textContent = messages[0];
+
+    // 결과 Firestore 저장
+    saveQuizResult(currentUser.uid, {
+        score: result.score,
+        total: result.total,
+        wrongWords: quizInstance.wrongWords
+    });
+}
+
+// -----------------------------------------------------
+// 4. 관리자 대시보드 렌더링
+// -----------------------------------------------------
+refreshAdminBtn.addEventListener('click', renderAdminDashboard);
+
+async function renderAdminDashboard() {
+    if (!currentUser || !isAdmin(currentUser)) return;
+
+    userStatsBody.innerHTML = '<tr><td colspan="4">데이터 로딩 중... ⏳</td></tr>';
+    wrongWordBody.innerHTML = '<tr><td colspan="3">데이터 로딩 중... ⏳</td></tr>';
+
+    try {
+        const { users, quizResults } = await getAdminSummaries();
+
+        // 1. 사용자 목록 렌더링
+        userStatsBody.innerHTML = users.map(user => `
+            <tr>
+                <td>${user.displayName || '이름 없음'}</td>
+                <td>${user.email}</td>
+                <td><span class="badge badge-count">${user.wordCount}개</span></td>
+                <td>${user.lastLogin ? new Date(user.lastLogin.seconds * 1000).toLocaleDateString() : '-'}</td>
+            </tr>
+        `).join('');
+
+        // 2. 오답 통계 계산
+        const wrongWordMap = {};
+        quizResults.forEach(res => {
+            if (res.wrongWords) {
+                res.wrongWords.forEach(ww => {
+                    if (!wrongWordMap[ww.word]) {
+                        wrongWordMap[ww.word] = { count: 0, reason: ww.correctMeaning };
+                    }
+                    wrongWordMap[ww.word].count++;
+                });
+            }
+        });
+
+        // 오답 횟수 순으로 정렬
+        const sortedWrongWords = Object.entries(wrongWordMap)
+            .map(([word, data]) => ({ word, ...data }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+
+        if (sortedWrongWords.length === 0) {
+            wrongWordBody.innerHTML = '<tr><td colspan="3">아직 오답 데이터가 없습니다.</td></tr>';
+        } else {
+            wrongWordBody.innerHTML = sortedWrongWords.map(sw => `
+                <tr>
+                    <td><strong>${sw.word}</strong></td>
+                    <td><span style="color:red;font-weight:600;">${sw.count}회</span></td>
+                    <td style="font-size:0.85rem;">${sw.reason}</td>
+                </tr>
+            `).join('');
+        }
+
+    } catch (err) {
+        userStatsBody.innerHTML = `<tr><td colspan="4" style="color:red">로드 실패: ${err.message}</td></tr>`;
+    }
+}
+
+// -----------------------------------------------------
+// 5. 보안 흐름 (Security Flow)
+// -----------------------------------------------------
+async function initSecurityFlow(user) {
+    const data = await getUserData(user.uid);
+    storedPassword = data?.secondaryPassword;
+
+    securityOverlay.classList.remove('hidden');
+    securityError.classList.add('hidden');
+    clearPinInputs();
+
+    if (!storedPassword) {
+        // 비밀번호가 없으면 설정 모드
+        isSettingUp = true;
+        isVerified = false;
+        securityTitle.textContent = "2차 비밀번호 설정 🆕";
+        securityDesc.textContent = "처음 오셨군요! 사용할 4자리 비밀번호를 번호별로 입력해주세요.";
+    } else {
+        // 비밀번호가 있으면 확인 모드
+        isSettingUp = false;
+        isVerified = false;
+        securityTitle.textContent = "2차 비밀번호 확인 🔒";
+        securityDesc.textContent = "공용 컴퓨터 보호를 위해 비밀번호를 입력해주세요.";
+    }
+}
+
+function clearPinInputs() {
+    pinInputs.forEach(input => input.value = "");
+    pinInputs[0].focus();
+}
+
+// PIN 입력 자동 포커스 이동
+pinInputs.forEach((input, index) => {
+    input.addEventListener('keyup', (e) => {
+        if (e.key >= 0 && e.key <= 9) {
+            if (index < 3) pinInputs[index + 1].focus();
+        } else if (e.key === 'Backspace') {
+            if (index > 0) pinInputs[index - 1].focus();
+        }
+    });
+});
+
+securityLogoutBtn.addEventListener('click', async () => {
+    await logout();
+    window.location.reload();
+});
+
+securityConfirmBtn.addEventListener('click', handleSecurityConfirm);
+
+async function handleSecurityConfirm() {
+    const enteredPin = pinInputs.map(input => input.value).join('');
+    if (enteredPin.length < 4) {
+        alert("4자리 비밀번호를 모두 입력해주세요.");
+        return;
+    }
+
+    if (isSettingUp) {
+        // 설정 모드: Firestore 저장
+        await updateSecondaryPassword(currentUser.uid, enteredPin);
+        alert("비밀번호가 설정되었습니다.");
+        isVerified = true;
+        securityOverlay.classList.add('hidden');
+    } else {
+        // 확인 모드: 검증
+        if (enteredPin === storedPassword) {
+            isVerified = true;
+            securityOverlay.classList.add('hidden');
+        } else {
+            securityError.classList.remove('hidden');
+            securityOverlay.querySelector('.security-card').classList.add('shake');
+            setTimeout(() => {
+                securityOverlay.querySelector('.security-card').classList.remove('shake');
+            }, 400);
+            clearPinInputs();
+        }
+    }
 }

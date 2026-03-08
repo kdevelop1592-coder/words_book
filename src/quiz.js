@@ -6,6 +6,7 @@ export class WordQuiz {
         this.questions = [];
         this.currentQuestionIndex = 0;
         this.score = 0;
+        this.wrongWords = []; // 틀린 단어 추적
     }
 
     // 퀴즈 생성 로직: 최소 5단어 이상 필요
@@ -65,6 +66,13 @@ export class WordQuiz {
     checkAnswer(isCorrect) {
         if (isCorrect) {
             this.score++;
+        } else {
+            // 틀린 경우 해당 문제의 단어 정보를 기록
+            const q = this.getCurrentQuestion();
+            this.wrongWords.push({
+                word: q.word,
+                correctMeaning: q.options.find(o => o.isCorrect).text
+            });
         }
     }
 
