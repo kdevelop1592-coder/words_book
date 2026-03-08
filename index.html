@@ -63,14 +63,15 @@
 
       <!-- 2. 내 단어장 및 월별 리스트 섹션 -->
       <section id="list-section" class="tab-content hidden">
-        <div class="list-header">
-          <h2>내 단어장 📖</h2>
-          <div class="month-filter">
+        <div class="list-controls glass-container">
+          <div class="control-group">
+            <label for="registered-search-input">단어 검색:</label>
+            <input type="text" id="registered-search-input" placeholder="저장된 단어에서 검색..." autocomplete="off">
+          </div>
+          <div class="control-group">
             <label for="month-select">월별 보기:</label>
             <select id="month-select">
               <option value="all">전체보기</option>
-              <!-- JS에서 현재 가입후 등록월 옵션 동적 추가 -->
-              <option value="2023-10">2023년 10월</option>
             </select>
           </div>
         </div>
